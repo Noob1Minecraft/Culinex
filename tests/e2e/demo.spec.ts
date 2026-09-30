@@ -2,6 +2,19 @@ import { test, expect, type Page } from '@playwright/test';
 async function noOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 }
+async function capture(page: Page, screen: string, project: string) {
+  const original = page.viewportSize()!;
+  const widths = project === 'desktop' ? [375, 768, 1280, 1920] : [original.width];
+  for (const width of widths) {
+    await page.setViewportSize({ width, height: original.height });
+    await noOverflow(page);
+    for (const img of await page.locator('img').all()) {
+      await expect.poll(() => img.evaluate(el => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    }
+    await page.screenshot({ path: `artifacts/redesign-${screen}-${width}.png`, fullPage: true });
+  }
+  await page.setViewportSize(original);
+}
 test('complete multilingual Demo Day flow, timers, parallel work, AI failure and reset', async ({ page }, testInfo) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
@@ -14,6 +27,7 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await page.reload();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('What are we cooking today?');
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-home.png`, fullPage: true });
+  await capture(page, 'home', testInfo.project.name);
   await page.getByRole('button', { name: 'Start cooking', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Continue', exact: true })).toBeDisabled();
   const selectors = page.locator('.select-button');
@@ -22,9 +36,11 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await selectors.nth(1).click(); await selectors.nth(2).click();
   await page.getByRole('button', { name: 'KZ', exact: true }).click();
   await expect(page.locator('.recipe-card.is-selected')).toHaveCount(3);
+  await capture(page, 'recipes', testInfo.project.name);
   await page.getByRole('button', { name: 'Жалғастыру', exact: true }).click();
   await noOverflow(page);
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-planner.png`, fullPage: true });
+  await capture(page, 'planner', testInfo.project.name);
   await page.getByRole('button', { name: 'EN', exact: true }).click();
   await page.getByLabel('When should everything be ready?').fill('19:30');
   await page.getByRole('button', { name: 'Decrease: Pans', exact: true }).click();
@@ -33,6 +49,8 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await page.getByRole('button', { name: 'Increase: Pans', exact: true }).click();
   await page.getByRole('button', { name: 'Create plan', exact: true }).click();
   await expect(page.locator('.timeline-row')).toHaveCount(13);
+  await expect(page.locator('.time-group')).not.toHaveCount(13);
+  await expect(page.locator('.parallel-label').first()).toBeVisible();
   await noOverflow(page);
   const times = await page.locator('.timeline-time').allTextContents();
   await page.getByRole('button', { name: 'KZ', exact: true }).click();
@@ -40,6 +58,7 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   expect(await page.locator('.timeline-time').allTextContents()).toEqual(times.map(value => value.replaceAll('min', 'мин')));
   await page.getByRole('button', { name: 'EN', exact: true }).click();
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-schedule.png`, fullPage: true });
+  await capture(page, 'schedule', testInfo.project.name);
   await page.getByRole('button', { name: 'Start now', exact: true }).click();
   const currentTask = await page.locator('.current-card h2').textContent();
   const timer = page.locator('.current-card [role="timer"]');
@@ -54,6 +73,7 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await expect(page.locator('.parallel-task')).not.toHaveCount(0);
   await noOverflow(page);
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-cooking.png`, fullPage: true });
+  await capture(page, 'cooking', testInfo.project.name);
   await page.getByRole('button', { name: 'Ask Culinex AI', exact: true }).click();
   await noOverflow(page);
   await page.getByLabel('Your question', { exact: true }).fill('What can I use instead of cream?');
@@ -61,6 +81,7 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await page.getByRole('button', { name: 'Ask', exact: true }).click();
   const response = await responsePromise; expect(response.status()).toBe(503);
   await expect(page.getByRole('alert')).toContainText('temporarily unavailable');
+  await capture(page, 'ai', testInfo.project.name);
   await page.getByRole('button', { name: 'Close', exact: true }).click();
   await expect(page.locator('.session-progress strong')).toHaveText('2 / 13');
   await page.getByRole('button', { name: 'Show full plan', exact: true }).click();
@@ -76,6 +97,7 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await expect(page.locator('.result-dishes > div')).toHaveCount(3);
   await noOverflow(page);
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-result.png`, fullPage: true });
+  await capture(page, 'result', testInfo.project.name);
   await page.getByRole('button', { name: 'Аяқтау', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Бүгін не пісіреміз?');
   await page.getByRole('button', { name: 'Пісіруді бастау', exact: true }).click();

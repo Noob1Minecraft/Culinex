@@ -26,5 +26,5 @@ export const en: Dictionary = {
   selectionError: 'Choose between two and three dishes.', timeError: 'Enter a valid serving time.', equipmentError: 'Not enough equipment. Check the burners, pans, pots, and oven needed for your dishes.',
   scheduleError: 'We couldn’t create a plan. Check the recipe data and try again.', sessionError: 'This session is unavailable. Start a new plan.', unexpectedError: 'Something went wrong. You can safely start again.', recover: 'Back to home',
   footer: 'Less chaos. More flavor.', coordinated: 'A coordinated plan', dishes: 'dishes', steps: 'steps', parallelValue: 'Cook in parallel', parallelText: 'No parallel steps right now. Focus on the current task.',
-  scheduleLegend: 'Color = dish · Bar = cooking time', progress: 'Cooking progress', decrease: 'Decrease', increase: 'Increase', finished: 'Completed', running: 'Running', waiting: 'Waiting', language: 'Interface language',
+  scheduleLegend: 'One time rail · Tasks with the same start time are grouped', progress: 'Cooking progress', decrease: 'Decrease', increase: 'Increase', finished: 'Completed', running: 'Running', waiting: 'Waiting', language: 'Interface language',
 };

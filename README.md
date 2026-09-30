@@ -37,7 +37,7 @@ npm run preview
 
 `dist/` is the production frontend. `preview` serves the frontend; it does not run the optional serverless AI endpoint. AI fails gracefully when serving static files only.
 
-Browser tests use installed Google Chrome, with desktop (1440×1000) and mobile (390×844) projects. Start the development server first, then run:
+Browser tests use installed Google Chrome, with desktop (1440×1000) and mobile (390×844) projects. The full desktop flow additionally checks Home, Recipes, Planner, Schedule, Cooking, AI, and Result at 375, 768, 1280, and 1920 px, checks loaded photos and horizontal overflow, and saves a screenshot of every view. Start the development server first, then run:
 
 ```sh
 npm run test:e2e
@@ -50,7 +50,7 @@ Set `E2E_BASE_URL` only if testing a different local port. Full-flow tests expec
 1. Open Home and switch RU → KZ → EN.
 2. Select all three temporary dishes. Continue is disabled until two are selected.
 3. Set the desired serving time and kitchen equipment. Try zero pans to demonstrate a recoverable equipment error, then restore one pan.
-4. Generate the combined timeline. Inspect task times, resource labels, active/passive bars, start date/time, and serving date/time.
+4. Generate the combined timeline. Follow the shared vertical time rail; tasks starting at the same time are grouped. Inspect durations, active/passive and resource labels, start date/time, and serving date/time.
 5. Choose **Start now**. This starts live timers immediately, regardless of the planned clock time.
 6. Complete the first two steps to see a passive task running alongside the next hands-on task.
 7. Switch language during cooking: the current task, countdown, and completed-step count remain intact.
@@ -120,6 +120,14 @@ The [Vercel Node function convention](https://vercel.com/docs/functions/runtimes
 All six screens currently use in-memory navigation at `/`; there are no `/planner` or `/cooking` URL routes. Refreshing `/` loads Home, rather than a 404, and resets the session as before. Therefore no SPA rewrite or `vercel.json` is needed. If URL routes are introduced later, add a frontend fallback that preserves `/api/*` and static asset paths, following [Vercel’s Vite routing guidance](https://vercel.com/docs/frameworks/frontend/vite).
 
 This pass prepares deployment configuration and verifies the Node handler locally; it does not create a cloud deployment. A Vercel deployment URL and live provider behavior can only be verified after deployment and key configuration. Static-only hosting still supports the complete core demo with graceful AI unavailability.
+
+## Visual design
+
+The interface uses warm charcoal surfaces, warm white text, orange actions, and restrained green status accents. Home is an editorial menu with a featured dish; Recipes uses large food photographs and explicit selection borders/checkmarks. Planner places the selected menu beside serving time and equipment. Schedule groups simultaneous starts on one vertical rail, with a separate start/finish/duration summary. Cooking puts the current instruction and timer first, parallel and upcoming work underneath, and AI/full-plan controls last. Result pairs the completed menu with session totals.
+
+Three temporary food images are bundled in `public/images/` and used by `src/components/RecipeImage.tsx`. They were generated with the built-in image generation tool; exact prompts and paths are recorded in [docs/image-prompts.md](docs/image-prompts.md). They illustrate the demo fixtures and should be replaced with final dish photography. No external image or font service is needed. A recipe's `image` property overrides the demo image mapping, with an emoji fallback for unmapped dishes.
+
+The redesign changes presentation only. Scheduler, session dispatcher, timer hooks, recipe/task data, navigation handlers, and AI server transport remain independent of the visual layer.
 
 ## Replacing the temporary recipes
 

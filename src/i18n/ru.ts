@@ -33,7 +33,7 @@ export const ru = {
   sessionError: 'Сессия недоступна. Начните новый план.', unexpectedError: 'Что-то пошло не так. Можно безопасно начать заново.', recover: 'На главную',
   footer: 'Меньше суеты. Больше вкуса.', coordinated: 'Согласованный план', dishes: 'блюда', steps: 'шагов',
   parallelValue: 'Готовьте параллельно', parallelText: 'Сейчас нет параллельных шагов. Можно сосредоточиться на текущем.',
-  scheduleLegend: 'Цвет — блюдо · Полоса — время выполнения', progress: 'Прогресс готовки', decrease: 'Уменьшить', increase: 'Увеличить',
+  scheduleLegend: 'Общая шкала времени · Одновременные шаги объединены', progress: 'Прогресс готовки', decrease: 'Уменьшить', increase: 'Увеличить',
   finished: 'Завершено', running: 'В процессе', waiting: 'Ожидает', language: 'Язык интерфейса',
 } as const;
 export type TranslationKey = keyof typeof ru;
