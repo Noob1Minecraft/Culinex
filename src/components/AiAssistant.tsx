@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, Sparkles, X } from 'lucide-react';
+import { ArrowUp, X } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { useCookingSession } from '../context/CookingSessionContext';
 import { recipeById, taskById } from '../data/recipes';
@@ -12,10 +12,10 @@ export function AiAssistant({ currentTaskId, onClose }: { currentTaskId?: string
   const [failed, setFailed] = useState(false);
   const controller = useRef<AbortController | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => { dialog.current?.showModal(); return () => controller.current?.abort(); }, []);
+  useEffect(() => { dialog.current?.showModal(); return () => { controller.current?.abort(); controller.current = null; }; }, []);
   useEffect(() => { controller.current?.abort(); controller.current = null; setAnswer(''); setLoading(false); setFailed(false); }, [language]);
   async function ask(event: React.FormEvent) {
-    event.preventDefault(); if (!question.trim() || loading) return;
+    event.preventDefault(); if (!question.trim() || loading || controller.current) return;
     setLoading(true); setFailed(false); setAnswer('');
     const requestController = new AbortController(); controller.current = requestController;
     const timeout = window.setTimeout(() => requestController.abort(), 25_000);
@@ -28,12 +28,13 @@ export function AiAssistant({ currentTaskId, onClose }: { currentTaskId?: string
       if (!data || typeof data !== 'object' || !('answer' in data) || typeof data.answer !== 'string' || !data.answer.trim()) throw new Error('invalid response');
       if (controller.current === requestController && !requestController.signal.aborted) setAnswer(data.answer);
     } catch { if (controller.current === requestController) setFailed(true); }
-    finally { window.clearTimeout(timeout); if (controller.current === requestController) setLoading(false); }
+    finally { window.clearTimeout(timeout); if (controller.current === requestController) { controller.current = null; setLoading(false); } }
   }
   return <dialog ref={dialog} className="ai-dialog" aria-labelledby="ai-title" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
-    <div className="ai-header"><span className="icon-tile"><Sparkles size={23} /></span><button className="icon-button" onClick={onClose} aria-label={t('close')}><X size={22} /></button></div>
-    <h2 id="ai-title">{t('aiTitle')}</h2><p className="muted">{t('aiSubtitle')}</p>
-    <form onSubmit={ask}><label htmlFor="question">{t('question')}</label><textarea id="question" autoFocus value={question} onChange={e => setQuestion(e.target.value)} placeholder={t('questionPlaceholder')} maxLength={1000} required rows={3} /><button className="primary" disabled={loading || !question.trim()}>{loading ? t('thinking') : t('send')}<ArrowUp size={18} /></button></form>
+    <div className="ai-header"><h2 id="ai-title">Culinex AI</h2><button className="icon-button" onClick={onClose} aria-label={t('close')}><X size={22} /></button></div>
+    <p className="muted">{t('aiSubtitle')}</p>
+    {currentTaskId && <div className="ai-context"><span>{t('now')} · {local(recipeById[taskById[currentTaskId].recipeId].name)}</span><strong>{local(taskById[currentTaskId].name)}</strong></div>}
+    <form onSubmit={ask} aria-busy={loading}><label htmlFor="question">{t('question')}</label><textarea id="question" autoFocus value={question} disabled={loading} onChange={e => setQuestion(e.target.value)} placeholder={t('questionPlaceholder')} maxLength={1000} required rows={3} /><button className="primary" disabled={loading || !question.trim()}>{loading ? t('thinking') : t('send')}<ArrowUp size={18} /></button></form>
     {failed && <p className="notice" role="alert">{t('aiUnavailable')}</p>}{answer && <div className="ai-answer" role="status">{answer}</div>}
     <p className="fine-print">{t('aiNote')}</p>
   </dialog>;

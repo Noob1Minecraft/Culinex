@@ -2,7 +2,7 @@ import type { Dictionary } from './ru';
 export const en: Dictionary = {
   home: 'Home', recipes: 'Dishes', planner: 'Kitchen', schedule: 'Plan', cooking: 'Cooking', result: 'Result',
   demo: 'DEMO PROTOTYPE', greeting: 'A good evening starts with a plan', headline: 'What are we cooking today?',
-  intro: 'Multiple dishes. One thoughtful plan. Bring everything to the table together, without the kitchen chaos.',
+  intro: 'Plan a few dishes. Cook from one timeline. Bring everything to the table on time.',
   start: 'Start cooking', explore: 'How it works', sync: 'Right on time. All together.', syncDetail: 'Culinex brings every dish into one timeline, with room for each step.',
   feature1: 'Choose 2–3 dishes', feature2: 'Get one shared plan', feature3: 'Cook one step at a time',
   feature1Text: 'Build a menu for your evening.', feature2Text: 'Time, equipment, and your attention, all accounted for.', feature3Text: 'Stay on track with timers and clear next steps.',
@@ -20,11 +20,11 @@ export const en: Dictionary = {
   timerFinished: 'Time’s up — check doneness', liveHint: 'Tap Done when a step is actually finished. The next steps respect equipment still in use.',
   passiveHint: 'This is cooking. The timer will remind you to check it.', allStarted: 'All steps have been started',
   askAi: 'Ask Culinex AI', aiTitle: 'Your kitchen companion', aiSubtitle: 'Get help with this step, an ingredient swap, or a cooking technique.',
-  question: 'Your question', questionPlaceholder: 'What can I use instead of cream?', send: 'Ask', thinking: 'Preparing an answer…', close: 'Close',
+  question: 'Your question', questionPlaceholder: 'Ask about cooking...', send: 'Ask', thinking: 'Preparing an answer…', close: 'Close',
   aiUnavailable: 'The AI assistant is temporarily unavailable. You can continue cooking using the plan.', aiNote: 'AI offers advice and cannot change your plan. Your timers keep running.',
   dinnerReady: 'Dinner is ready', resultDetail: 'You did it! Multiple dishes, one lovely evening.', completedDishes: 'Completed dishes', plannedFinish: 'Planned serving time', actualDuration: 'Actual duration', finish: 'Finish', another: 'Cook again',
   selectionError: 'Choose between two and three dishes.', timeError: 'Enter a valid serving time.', equipmentError: 'Not enough equipment. Check the burners, pans, pots, and oven needed for your dishes.',
   scheduleError: 'We couldn’t create a plan. Check the recipe data and try again.', sessionError: 'This session is unavailable. Start a new plan.', unexpectedError: 'Something went wrong. You can safely start again.', recover: 'Back to home',
-  footer: 'Less chaos. More flavor.', coordinated: 'A coordinated plan', dishes: 'dishes', steps: 'steps', parallelValue: 'Cook in parallel', parallelText: 'While pasta simmers, make room for another dish.',
+  footer: 'Less chaos. More flavor.', coordinated: 'A coordinated plan', dishes: 'dishes', steps: 'steps', parallelValue: 'Cook in parallel', parallelText: 'No parallel steps right now. Focus on the current task.',
   scheduleLegend: 'Color = dish · Bar = cooking time', progress: 'Cooking progress', decrease: 'Decrease', increase: 'Increase', finished: 'Completed', running: 'Running', waiting: 'Waiting', language: 'Interface language',
 };
