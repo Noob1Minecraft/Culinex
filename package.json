@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
+    "build:render": "npm run build && tsc -p tsconfig.render.json",
+    "start": "node .render-build/server/render.js",
     "typecheck": "tsc -b",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run tests/unit",

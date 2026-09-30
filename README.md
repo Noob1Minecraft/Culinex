@@ -125,6 +125,24 @@ All six screens currently use in-memory navigation at `/`; there are no `/planne
 
 Production is hosted at [culinex-rho.vercel.app](https://culinex-rho.vercel.app) in the Vercel project `enginnerus/culinex`, connected to GitHub `main`. `AI_API_KEY` is a sensitive, server-side Production variable; `AI_MODEL` selects the tested Groq model. Run `npm run test:production` against that URL after deployment to verify both device sizes and live AI. No Render service is required. Static-only hosting still supports the complete core demo with graceful AI unavailability.
 
+## Additional Render deployment
+
+Render runs **one Node Web Service** serving both the Vite `dist/` files and the unchanged `POST /api/ai` handler. There is no separate API service, database, Redis, worker, or cron job. Vercel continues to use its existing serverless entry point.
+
+- Repository: `Noob1Minecraft/Culinex`, branch `main`.
+- Runtime: Node 24 (bounded by `package.json` engines).
+- Build command: `npm ci --include=dev && npm run build:render`.
+- Start command: `npm start`.
+- The adapter listens on `0.0.0.0:$PORT` (default 10000) and provides `GET /healthz`.
+- Set `AI_API_KEY` in Render's server Environment settings; never use a `VITE_` prefix. Set `AI_MODEL=openai/gpt-oss-120b`.
+- Enable automatic deployment from `main`.
+
+`server/render.ts` is the thin Node HTTP adapter; `tsconfig.render.json` compiles it and the shared API code into ignored `.render-build/`. Only `dist/` is publicly served. Dotfiles, filesystem traversal, and unknown API paths are rejected. No new runtime package is required, and no `render.yaml` is needed for the directly configured single service.
+
+To test the compiled adapter locally, run `npm run build:render` and `npm start`. Provide server environment variables through the shell (or Node's `--env-file=.env.local` option when invoking the compiled entry point). For deployment checks, set `E2E_BASE_URL` to either host's HTTPS URL and run `npm run test:production`.
+
+The Render Free plan can spin down after inactivity, so the first request can be slower. This additional deployment does not replace the Vercel production URL.
+
 ## Visual design
 
 The interface uses warm charcoal surfaces, warm white text, orange actions, and restrained green status accents. Home is an editorial menu with a featured dish; Recipes uses large food photographs and explicit selection borders/checkmarks. Planner places the selected menu beside serving time and equipment. Schedule groups simultaneous starts on one vertical rail, with a separate start/finish/duration summary. Cooking puts the current instruction and timer first, parallel and upcoming work underneath, and AI/full-plan controls last. Result pairs the completed menu with session totals.

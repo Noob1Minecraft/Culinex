@@ -5,6 +5,7 @@ test('production cooking flow with live RU, KK and EN assistance', async ({ page
   expect((await request.post('/api/ai', { data: { question: '', language: 'en', context: {} } })).status()).toBe(400);
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.name));
+  page.on('console', message => { if (message.type() === 'error') errors.push('Browser console error'); });
   await page.goto('/');
   await expect(page.locator('h1')).toHaveText('Что будем готовить сегодня?');
   await page.getByRole('button', { name: 'EN', exact: true }).click();

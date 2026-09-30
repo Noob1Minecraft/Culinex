@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": ".render-build",
+    "rootDir": ".",
+    "types": ["node"]
+  },
+  "include": ["server/render.ts", "server/ai/**/*.ts", "api/ai.ts"]
+}
