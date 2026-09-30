@@ -1,4 +1,4 @@
-import type { CookingTask, KitchenEquipment, Recipe } from '../types/recipe';
+import type { KitchenEquipment, Recipe } from '../types/recipe';
 import type { Plan, ScheduledTask } from '../types/scheduler';
 import { fits } from './resources';
 export class ScheduleError extends Error {

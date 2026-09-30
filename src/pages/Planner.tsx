@@ -1,0 +1,9 @@
+import { ArrowRight, Clock3 } from 'lucide-react';
+import { useI18n } from '../i18n';
+import { recipeById } from '../data/recipes';
+import { useCookingSession } from '../context/CookingSessionContext';
+import { EquipmentSelector } from '../components/EquipmentSelector';
+export function Planner() {
+  const { t, local } = useI18n(); const { session, configure, generate, error } = useCookingSession();
+  return <><header className="page-heading"><span className="eyebrow">02 / {t('planner')}</span><h1>{t('plannerTitle')}</h1><p>{t('plannerDetail')}</p></header><div className="planner-grid"><div className="planner-main"><section className="panel"><h2><Clock3 size={22} />{t('finishQuestion')}</h2><label className="sr-only" htmlFor="finish-time">{t('finishQuestion')}</label><input id="finish-time" className="time-input" type="time" value={session.targetFinishTime} onChange={e => configure(e.target.value, session.equipment)} required /><p className="muted">{t('finishHint')}</p></section><section className="panel"><h2>{t('equipment')}</h2><EquipmentSelector value={session.equipment} onChange={equipment => configure(session.targetFinishTime, equipment)} /><p className="fine-print">{t('equipmentHint')}</p></section></div><aside className="panel menu-summary"><span className="eyebrow">CULINEX</span><h2>{t('menu')}</h2>{session.selectedRecipeIds.map(id => <div className="summary-dish" key={id}><span aria-hidden="true">{recipeById[id].visual}</span><div><strong>{local(recipeById[id].name)}</strong><small>{recipeById[id].estimatedMinutes} {t('min')} · {t(recipeById[id].difficulty)}</small></div></div>)}<div className="summary-note">{t('syncDetail')}</div><button className="primary" onClick={generate}>{t('createPlan')}<ArrowRight size={18} /></button>{error && <p role="alert" className="notice">{t(error)}</p>}</aside></div></>;
+}
