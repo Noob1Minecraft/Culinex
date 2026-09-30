@@ -23,6 +23,8 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await page.getByRole('button', { name: 'KZ', exact: true }).click();
   await expect(page.locator('.recipe-card.is-selected')).toHaveCount(3);
   await page.getByRole('button', { name: 'Жалғастыру', exact: true }).click();
+  await noOverflow(page);
+  await page.screenshot({ path: `artifacts/${testInfo.project.name}-planner.png`, fullPage: true });
   await page.getByRole('button', { name: 'EN', exact: true }).click();
   await page.getByLabel('When should everything be ready?').fill('19:30');
   await page.getByRole('button', { name: 'Decrease: Pans', exact: true }).click();
@@ -53,6 +55,7 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await noOverflow(page);
   await page.screenshot({ path: `artifacts/${testInfo.project.name}-cooking.png`, fullPage: true });
   await page.getByRole('button', { name: 'Ask Culinex AI', exact: true }).click();
+  await noOverflow(page);
   await page.getByLabel('Your question', { exact: true }).fill('What can I use instead of cream?');
   const responsePromise = page.waitForResponse('**/api/ai');
   await page.getByRole('button', { name: 'Ask', exact: true }).click();

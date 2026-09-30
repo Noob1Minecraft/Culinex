@@ -8,7 +8,7 @@ A Demo Day prototype: choose **2–3 dishes**, configure your kitchen and servin
 
 ## Run locally
 
-Requires Node.js 22.12+ (verified with Node.js 24) and npm.
+Requires Node.js 24 and npm. The same Node major version is selected for Vercel through `package.json`.
 
 ```sh
 git clone https://github.com/Noob1Minecraft/Culinex.git
@@ -43,7 +43,7 @@ Browser tests use installed Google Chrome, with desktop (1440×1000) and mobile 
 npm run test:e2e
 ```
 
-Set `E2E_BASE_URL` only if testing a different local port. Full-flow tests expect AI credentials to be absent so they can verify the real unavailable response. A separate test stubs a successful Kazakh response and verifies the language/context contract. Browser screenshots are saved under ignored `artifacts/`; failure traces under ignored `test-results/`.
+Set `E2E_BASE_URL` only if testing a different local port. Full-flow tests expect AI credentials to be absent so they can verify the real unavailable response. Additional tests stub responses in RU/KK/EN, check context, loading and duplicate-submit protection, and simulate network errors, invalid JSON, empty answers, and rate limiting. Browser screenshots are saved under ignored `artifacts/`; failure traces under ignored `test-results/`. Two workers keep memory usage predictable on a demo laptop.
 
 ## Demo Day flow
 
@@ -99,11 +99,27 @@ Request:
 }
 ```
 
-Success: `{ "answer": "...", "language": "en" }`. Errors return `{ "error": "..." }` with 400 (invalid input), 405 (wrong method), 413 (oversized raw body), or 503 (unavailable). Request strings and context are bounded. Requests time out; provider errors and credentials are never returned to the client. Responses render as plain text. The AI has no tools and cannot control or regenerate the schedule.
+Success: `{ "answer": "..." }`. Errors return `{ "error": "..." }` with 400 (invalid input), 405 (wrong method), 413 (oversized body, including pre-parsed requests), or 503 (unavailable). Only the validated question, language, and cooking context are forwarded. Provider requests time out after 20 seconds; the function has a 30-second maximum duration and the browser a 25-second timeout. Provider errors and credentials are never returned to the client. Responses render as plain text. The AI has no tools and cannot control or regenerate the schedule, dependencies, resources, timers, or progress.
 
-Provider integration uses the [OpenAI Chat Completions API](https://developers.openai.com/api/reference/resources/chat). `api/ai.ts` exports both a testable handler and a Node serverless entry point. Vite mounts the same handler locally. A Node serverless host such as Vercel can serve `api/ai.ts` alongside the Vite build; configure the server environment there. A static host alone supports the complete core demo but not live AI responses.
+The existing [OpenAI Chat Completions integration](https://developers.openai.com/api/reference/resources/chat) is preserved. Provider-specific transport is isolated in `server/ai/provider.ts`; request validation is in `server/ai/service.ts`. `api/ai.ts` exports the Node serverless entry point. Vite uses the very same HTTP handler locally: `npm run dev` needs no second backend process. `optional_model_name` in the example file is a placeholder and is treated as unset; the default model is `gpt-4.1-mini`. Use an OpenAI key with this provider, not a Groq key.
 
-No live paid-provider response was verified during implementation because no AI key was configured. Request routing, language/context propagation, success rendering with a stubbed response, and graceful real-endpoint failure were tested. This is a demo endpoint, without production rate limiting or abuse protection.
+No live paid-provider response was verified during implementation because no AI key was configured. **Live provider response requires AI_API_KEY.** Request routing, language/context propagation, success rendering with stubbed responses, and graceful real-endpoint failure were tested. This is a demo endpoint, without production rate limiting or abuse protection.
+
+To explicitly run three small paid-provider checks (RU, KK, EN), configure the local server environment and run `npm run test:ai:live`. They skip when no key is available and never print the key or response text. The checks verify success, nonempty text, and the expected writing system; linguistic quality still needs a human review, especially Kazakh.
+
+## Vercel deployment preparation
+
+1. In Vercel, import `Noob1Minecraft/Culinex` and select the repository root.
+2. Use the **Vite** framework preset, **Node.js 24.x**, install command `npm ci`, build command `npm run build`, and output directory `dist`.
+3. In **Project Settings → Environment Variables**, add **AI_API_KEY** as a server secret for Production and the Preview environments where AI should work. Add **AI_MODEL** only to override the default with a model available to your OpenAI account. Do not use a `VITE_` prefix.
+4. Deploy from `main`. After changing environment variables, create a new deployment so the function receives the changes.
+5. Verify `/` and `/favicon.svg`, refresh the page, and run through the cooking flow. Test `POST /api/ai` from the AI panel in each UI language; without a key, a JSON 503 and a localized fallback are expected. `GET /api/ai` intentionally returns JSON 405.
+
+The [Vercel Node function convention](https://vercel.com/docs/functions/runtimes/node-js) serves `api/ai.ts`; no persistent server, Express, Render, or database is needed. Helpers stay outside `api/` so they do not become additional function routes. Only server code reads credentials.
+
+All six screens currently use in-memory navigation at `/`; there are no `/planner` or `/cooking` URL routes. Refreshing `/` loads Home, rather than a 404, and resets the session as before. Therefore no SPA rewrite or `vercel.json` is needed. If URL routes are introduced later, add a frontend fallback that preserves `/api/*` and static asset paths, following [Vercel’s Vite routing guidance](https://vercel.com/docs/frameworks/frontend/vite).
+
+This pass prepares deployment configuration and verifies the Node handler locally; it does not create a cloud deployment. A Vercel deployment URL and live provider behavior can only be verified after deployment and key configuration. Static-only hosting still supports the complete core demo with graceful AI unavailability.
 
 ## Replacing the temporary recipes
 
@@ -125,9 +141,11 @@ src/
   i18n/         Central RU / KK / EN dictionaries and safe Russian fallback
   scheduler/    Deterministic scheduling and shared resource rules
   types/        Recipe, schedule, and session contracts
-api/ai.ts       Optional server-side provider integration
+api/ai.ts       Vercel Node function and shared local HTTP adapter
+server/ai/      Server-only validation and isolated OpenAI transport
 tests/unit/     Scheduler, live session, timers, localization, API contracts
 tests/e2e/      Desktop and mobile Demo Day scenarios
+tests/live/     Explicit opt-in RU / KK / EN provider checks
 ```
 
 React + TypeScript + Vite + Tailwind CSS; lightweight Context state. No authentication, database, payments, gamification, or AI-generated scheduling.
