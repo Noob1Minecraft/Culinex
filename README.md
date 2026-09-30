@@ -82,7 +82,7 @@ Session state lives in React Context. **Refreshing or closing the tab resets the
 The core flow works without any credentials.
 
 1. Copy `.env.example` to `.env.local`.
-2. Set **AI_API_KEY** to an OpenAI API key on the server. Optionally set **AI_MODEL** (default `gpt-4.1-mini`). An already-set server environment variable **OPENAI_API_KEY** is accepted as a fallback.
+2. Set **AI_API_KEY** to a Groq API key on the server. Optionally set **AI_MODEL** (default `openai/gpt-oss-120b`). Legacy OpenAI keys are not used.
 3. Restart the development server.
 
 Never use a `VITE_*` credential. Real `.env` files are ignored by Git. The frontend only calls `POST /api/ai`; provider headers and credentials remain server-side.
@@ -103,17 +103,19 @@ Request:
 
 Success: `{ "answer": "..." }`. Errors return `{ "error": "..." }` with 400 (invalid input), 405 (wrong method), 413 (oversized body, including pre-parsed requests), or 503 (unavailable). Only the validated question, language, and cooking context are forwarded. Provider requests time out after 20 seconds; the function has a 30-second maximum duration and the browser a 25-second timeout. Provider errors and credentials are never returned to the client. Responses render as plain text. The AI has no tools and cannot control or regenerate the schedule, dependencies, resources, timers, or progress.
 
-The existing [OpenAI Chat Completions integration](https://developers.openai.com/api/reference/resources/chat) is preserved. Provider-specific transport is isolated in `server/ai/provider.ts`; request validation is in `server/ai/service.ts`. `api/ai.ts` exports the Node serverless entry point. Vite uses the very same HTTP handler locally: `npm run dev` needs no second backend process. `optional_model_name` in the example file is a placeholder and is treated as unset; the default model is `gpt-4.1-mini`. Use an OpenAI key with this provider, not a Groq key.
+Requests use the official [Groq Chat Completions API](https://console.groq.com/docs/openai) at `https://api.groq.com/openai/v1/chat/completions`. Provider-specific transport is isolated in `server/ai/provider.ts`; request validation is in `server/ai/service.ts`. `api/ai.ts` exports the Node serverless entry point. Vite uses the very same HTTP handler locally: `npm run dev` needs no second backend process. `optional_model_name` in the example file is a placeholder and is treated as unset; the default model is `openai/gpt-oss-120b`, listed among [Groq production models](https://console.groq.com/docs/models). This is an open-weight model hosted by Groq; requests and credentials go only to Groq, not the OpenAI API. GPT-OSS uses low reasoning effort and suppresses reasoning output; the UI receives only the final answer. No tools are enabled.
 
-No live paid-provider response was verified during implementation because no AI key was configured. **Live provider response requires AI_API_KEY.** Request routing, language/context propagation, success rendering with stubbed responses, and graceful real-endpoint failure were tested. This is a demo endpoint, without production rate limiting or abuse protection.
+Live Groq responses in RU, KK and EN were verified locally with `openai/gpt-oss-120b`. Request routing, language/context propagation, loading, and graceful failure are also covered by automated tests. This is a demo endpoint, without production rate limiting or abuse protection.
 
 To explicitly run three small paid-provider checks (RU, KK, EN), configure the local server environment and run `npm run test:ai:live`. They skip when no key is available and never print the key or response text. The checks verify success, nonempty text, and the expected writing system; linguistic quality still needs a human review, especially Kazakh.
+
+If this Windows environment reports `SELF_SIGNED_CERT_IN_CHAIN`, use its trusted system certificate store with Node 24: set `$env:NODE_USE_SYSTEM_CA = "1"` in PowerShell before starting `npm run dev` or the live tests. Keep TLS verification enabled. This is a local certificate configuration; the Vercel function does not need it.
 
 ## Vercel deployment preparation
 
 1. In Vercel, import `Noob1Minecraft/Culinex` and select the repository root.
 2. Use the **Vite** framework preset, **Node.js 24.x**, install command `npm ci`, build command `npm run build`, and output directory `dist`.
-3. In **Project Settings → Environment Variables**, add **AI_API_KEY** as a server secret for Production and the Preview environments where AI should work. Add **AI_MODEL** only to override the default with a model available to your OpenAI account. Do not use a `VITE_` prefix.
+3. In **Project Settings → Environment Variables**, add **AI_API_KEY** as a server secret for Production and the Preview environments where AI should work. Add **AI_MODEL** only to override the default with a model available to your Groq account. Do not use a `VITE_` prefix.
 4. Deploy from `main`. After changing environment variables, create a new deployment so the function receives the changes.
 5. Verify `/` and `/favicon.svg`, refresh the page, and run through the cooking flow. Test `POST /api/ai` from the AI panel in each UI language; without a key, a JSON 503 and a localized fallback are expected. `GET /api/ai` intentionally returns JSON 405.
 
@@ -121,7 +123,7 @@ The [Vercel Node function convention](https://vercel.com/docs/functions/runtimes
 
 All six screens currently use in-memory navigation at `/`; there are no `/planner` or `/cooking` URL routes. Refreshing `/` loads Home, rather than a 404, and resets the session as before. No SPA rewrite is needed. `vercel.json` pins the Vite preset, `npm ci`, `npm run build`, and `dist`. If URL routes are introduced later, add a frontend fallback that preserves `/api/*` and static asset paths, following [Vercel’s Vite routing guidance](https://vercel.com/docs/frameworks/frontend/vite).
 
-This pass prepares deployment configuration and verifies the Node handler locally; it does not create a cloud deployment. A Vercel deployment URL and live provider behavior can only be verified after deployment and key configuration. Static-only hosting still supports the complete core demo with graceful AI unavailability.
+Production is hosted at [culinex-rho.vercel.app](https://culinex-rho.vercel.app) in the Vercel project `enginnerus/culinex`, connected to GitHub `main`. `AI_API_KEY` is a sensitive, server-side Production variable; `AI_MODEL` selects the tested Groq model. Run `npm run test:production` against that URL after deployment to verify both device sizes and live AI. No Render service is required. Static-only hosting still supports the complete core demo with graceful AI unavailability.
 
 ## Visual design
 
@@ -152,7 +154,7 @@ src/
   scheduler/    Deterministic scheduling and shared resource rules
   types/        Recipe, schedule, and session contracts
 api/ai.ts       Vercel Node function and shared local HTTP adapter
-server/ai/      Server-only validation and isolated OpenAI transport
+server/ai/      Server-only validation and isolated Groq transport
 tests/unit/     Scheduler, live session, timers, localization, API contracts
 tests/e2e/      Desktop and mobile Demo Day scenarios
 tests/live/     Explicit opt-in RU / KK / EN provider checks

@@ -16,6 +16,7 @@ it.each(['ru', 'kk', 'en'])('passes context and requested %s language only on th
   expect(response.status).toBe(200);
   expect(response.body).toEqual({ answer: 'A practical answer.' });
   const payload = JSON.parse(provider.mock.calls[0][1].body);
+  expect(provider.mock.calls[0][0]).toBe('https://api.groq.com/openai/v1/chat/completions');
   expect(payload.messages[0].content).toContain({ ru: 'Russian', kk: 'Kazakh', en: 'English' }[language]);
   expect(payload.messages[1].content).toContain('Pasta');
   expect(JSON.stringify(response)).not.toContain('unit-test-placeholder');
@@ -43,7 +44,9 @@ it('strips unrelated client data and treats the example model as unset', async (
   await handleAi('POST', { ...request, extra: 'unnecessary application data', context: { ...request.context, schedule: 'do not transmit' } }, { AI_API_KEY: 'unit-test-placeholder', AI_MODEL: 'optional_model_name' }, provider);
   const options = provider.mock.calls[0][1];
   const body = JSON.parse(options.body);
-  expect(body.model).toBe('gpt-4.1-mini');
+  expect(body.model).toBe('openai/gpt-oss-120b');
+  expect(body.reasoning_effort).toBe('low');
+  expect(body.include_reasoning).toBe(false);
   expect(body.messages[0].content).toContain('unrelated to cooking');
   expect(body.messages[0].content).toContain('Do not generate, modify, reorder');
   expect(JSON.parse(body.messages[1].content)).toEqual(request);
@@ -60,4 +63,19 @@ it('validates a pre-parsed Vercel request and caps its size', async () => {
 it('sanitizes provider failures', async () => {
   const provider = vi.fn().mockRejectedValue(new Error('private provider details'));
   expect(await handleAi('POST', request, { AI_API_KEY: 'unit-test-placeholder' }, provider)).toEqual({ status: 503, body: { error: 'ai_unavailable' } });
+});
+it('does not send legacy OpenAI credentials to Groq', async () => {
+  const provider = vi.fn();
+  const legacyEnvironment = { OPENAI_API_KEY: 'legacy-placeholder', AI_MODEL: undefined };
+  expect((await handleAi('POST', request, legacyEnvironment, provider)).status).toBe(503);
+  expect(provider).not.toHaveBeenCalled();
+});
+it('supports a configured Groq model without adding GPT-OSS-only options', async () => {
+  const provider = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: 'Answer' } }] })));
+  await handleAi('POST', request, { AI_API_KEY: 'unit-test-placeholder', AI_MODEL: 'llama-3.3-70b-versatile' }, provider);
+  const body = JSON.parse(provider.mock.calls[0][1].body);
+  expect(body.model).toBe('llama-3.3-70b-versatile');
+  expect(body).not.toHaveProperty('reasoning_effort');
+  expect(body).not.toHaveProperty('include_reasoning');
+  expect(body).not.toHaveProperty('tools');
 });

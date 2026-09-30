@@ -6,7 +6,7 @@ export interface AiInput {
   language: 'ru' | 'kk' | 'en';
   context: { recipe: string; currentTask: string; selectedRecipes: string[] };
 }
-export interface AiEnvironment { AI_API_KEY?: string; OPENAI_API_KEY?: string; AI_MODEL?: string }
+export interface AiEnvironment { AI_API_KEY?: string; AI_MODEL?: string }
 const MAX_BODY_BYTES = 8192;
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const boundedText = (value: unknown, max: number): value is string => typeof value === 'string' && value.length <= max;
@@ -52,7 +52,7 @@ export async function handleAi(method: string, body: unknown, env: AiEnvironment
     input = parseInput(JSON.parse(serialized));
   } catch { return error(400, 'invalid_request'); }
   if (!input) return error(400, 'invalid_request');
-  const key = (env.AI_API_KEY || env.OPENAI_API_KEY)?.trim();
+  const key = env.AI_API_KEY?.trim();
   if (!key || key === 'your_api_key_here') return error(503, 'ai_unavailable');
   const configuredModel = env.AI_MODEL?.trim();
   const model = configuredModel && configuredModel !== 'optional_model_name' ? configuredModel : DEFAULT_AI_MODEL;

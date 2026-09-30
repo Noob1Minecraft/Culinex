@@ -1,6 +1,6 @@
 import type { AiInput } from './service.js';
 
-export const DEFAULT_AI_MODEL = 'gpt-4.1-mini';
+export const DEFAULT_AI_MODEL = 'openai/gpt-oss-120b';
 
 // Provider-specific transport lives here; the UI and scheduler never import it.
 export async function getCookingAnswer(
@@ -10,13 +10,14 @@ export async function getCookingAnswer(
   providerFetch: typeof fetch = fetch,
 ): Promise<string> {
   const languageName = { ru: 'Russian', kk: 'Kazakh', en: 'English' }[input.language];
-  const response = await providerFetch('https://api.openai.com/v1/chat/completions', {
+  const response = await providerFetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     signal: AbortSignal.timeout(20_000),
     body: JSON.stringify({
       model,
-      max_completion_tokens: 450,
+      max_completion_tokens: 1200,
+      ...(model.startsWith('openai/gpt-oss-') ? { reasoning_effort: 'low', include_reasoning: false } : {}),
       messages: [
         {
           role: 'system',

@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { loadEnv } from 'vite';
 import { handleAi } from '../../api/ai';
 const env = { ...loadEnv('development', process.cwd(), 'AI_'), ...process.env };
-const key = env.AI_API_KEY || env.OPENAI_API_KEY;
+const key = env.AI_API_KEY;
 // Explicit opt-in command only. No secrets, provider payloads, or responses logged.
 it.skipIf(!key || key === 'your_api_key_here').each(['ru', 'kk', 'en'])('live cooking response in %s', async language => {
   const result = await handleAi('POST', { language, question: 'How can I thin a thick tomato sauce?',
