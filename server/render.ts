@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import { serveAi } from '../api/ai.js';
 import type { AiEnvironment } from './ai/service.js';
+import { DEFAULT_AI_MODEL, getCookingAnswer } from './ai/provider.js';
 
 const mime: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -67,6 +68,25 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
   const server = createRenderServer();
   server.listen(port, '0.0.0.0', () => console.log('Culinex HTTP server ready'));
+  if (process.env.RENDER) {
+    const key = process.env.AI_API_KEY?.trim();
+    const model = process.env.AI_MODEL?.trim() || DEFAULT_AI_MODEL;
+    console.log(JSON.stringify({ probe: 'render-ai', keyPresent: !!key, groqKeyFormat: key?.startsWith('gsk_') === true, defaultModel: model === DEFAULT_AI_MODEL }));
+    if (key) void getCookingAnswer({ question: 'How can I thin tomato sauce?', language: 'en',
+      context: { recipe: 'Pasta', currentTask: 'Mix sauce', selectedRecipes: ['Pasta'] } }, key, model, async (url, options) => {
+      const response = await fetch(url, options);
+      let category = 'none';
+      if (!response.ok) {
+        const payload = await response.clone().json().catch(() => null);
+        const code = payload?.error?.code;
+        category = ['invalid_api_key', 'model_not_found', 'rate_limit_exceeded', 'insufficient_quota', 'permission_denied'].includes(code) ? code : 'provider_error';
+      }
+      console.log(JSON.stringify({ probe: 'render-ai', providerStatus: response.status, category }));
+      return response;
+    }).then(() => console.log('Render AI probe succeeded')).catch(error => {
+      console.log(JSON.stringify({ probe: 'render-ai', failed: true, networkCode: ['ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'SELF_SIGNED_CERT_IN_CHAIN'].includes(error?.cause?.code) ? error.cause.code : 'unavailable' }));
+    });
+  }
   const stop = () => { server.close(() => process.exit(0)); setTimeout(() => process.exit(0), 25_000).unref(); };
   process.once('SIGTERM', stop);
   process.once('SIGINT', stop);
