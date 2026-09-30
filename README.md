@@ -43,7 +43,9 @@ Browser tests use installed Google Chrome, with desktop (1440×1000) and mobile 
 npm run test:e2e
 ```
 
-Set `E2E_BASE_URL` only if testing a different local port. Full-flow tests expect AI credentials to be absent so they can verify the real unavailable response. Additional tests stub responses in RU/KK/EN, check context, loading and duplicate-submit protection, and simulate network errors, invalid JSON, empty answers, and rate limiting. Browser screenshots are saved under ignored `artifacts/`; failure traces under ignored `test-results/`. Two workers keep memory usage predictable on a demo laptop.
+Set `E2E_BASE_URL` only if testing a different local port. Failure scenarios stub unavailable responses so they are deterministic with or without local AI credentials. Additional tests stub responses in RU/KK/EN, check context, loading and duplicate-submit protection, and simulate network errors, invalid JSON, empty answers, and rate limiting. Browser screenshots are saved under ignored `artifacts/`; failure traces under ignored `test-results/`. Two workers keep memory usage predictable on a demo laptop.
+
+For an explicit production smoke test, set `E2E_BASE_URL` to the deployed HTTPS URL and run `npm run test:production`. It tests API validation and the complete cooking flow on desktop and mobile, making one real AI request per language on each device. This consumes provider credits. Failed AI requests are recorded as test failures while the test still verifies cooking can reach Result. Tracing is disabled for these live checks.
 
 ## Demo Day flow
 
@@ -117,7 +119,7 @@ To explicitly run three small paid-provider checks (RU, KK, EN), configure the l
 
 The [Vercel Node function convention](https://vercel.com/docs/functions/runtimes/node-js) serves `api/ai.ts`; no persistent server, Express, Render, or database is needed. Helpers stay outside `api/` so they do not become additional function routes. Only server code reads credentials.
 
-All six screens currently use in-memory navigation at `/`; there are no `/planner` or `/cooking` URL routes. Refreshing `/` loads Home, rather than a 404, and resets the session as before. Therefore no SPA rewrite or `vercel.json` is needed. If URL routes are introduced later, add a frontend fallback that preserves `/api/*` and static asset paths, following [Vercel’s Vite routing guidance](https://vercel.com/docs/frameworks/frontend/vite).
+All six screens currently use in-memory navigation at `/`; there are no `/planner` or `/cooking` URL routes. Refreshing `/` loads Home, rather than a 404, and resets the session as before. No SPA rewrite is needed. `vercel.json` pins the Vite preset, `npm ci`, `npm run build`, and `dist`. If URL routes are introduced later, add a frontend fallback that preserves `/api/*` and static asset paths, following [Vercel’s Vite routing guidance](https://vercel.com/docs/frameworks/frontend/vite).
 
 This pass prepares deployment configuration and verifies the Node handler locally; it does not create a cloud deployment. A Vercel deployment URL and live provider behavior can only be verified after deployment and key configuration. Static-only hosting still supports the complete core demo with graceful AI unavailability.
 

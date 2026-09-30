@@ -76,6 +76,8 @@ test('complete multilingual Demo Day flow, timers, parallel work, AI failure and
   await capture(page, 'cooking', testInfo.project.name);
   await page.getByRole('button', { name: 'Ask Culinex AI', exact: true }).click();
   await noOverflow(page);
+  // Failure coverage must stay deterministic even when a real local key is set.
+  await page.route('**/api/ai', route => route.fulfill({ status: 503, json: { error: 'ai_unavailable' } }));
   await page.getByLabel('Your question', { exact: true }).fill('What can I use instead of cream?');
   const responsePromise = page.waitForResponse('**/api/ai');
   await page.getByRole('button', { name: 'Ask', exact: true }).click();

@@ -10,3 +10,6 @@ playwright-report/
 .vercel/
 artifacts/
 *.log
+
+.vercel
+.env*
